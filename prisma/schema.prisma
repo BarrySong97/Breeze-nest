@@ -17,22 +17,28 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   email     String   @unique
-  password  String
-  firstname String?
   lastname  String?
-  posts     Post[]
+  googleId  String?
+  firstname String?
+  avatar    String?
+  posts     Habit[]
   role      Role
 }
 
-model Post {
+model Habit {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  published Boolean
-  title     String
-  content   String?
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  String?
+  order     Int
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+model HabitDates {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  date      DateTime
 }
 
 enum Role {

@@ -1,45 +1,45 @@
 import { PrismaService } from 'nestjs-prisma';
+import axios from 'axios';
 import { Prisma, User } from '@prisma/client';
 import {
   Injectable,
-  NotFoundException,
-  BadRequestException,
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { PasswordService } from './password.service';
 import { SignupInput } from './dto/signup.input';
 import { Token } from './models/token.model';
 import { SecurityConfig } from 'src/common/configs/config.interface';
-
+import { Auth } from './models/auth.model';
+interface GoogleUserInfoResponse {
+  id: string; // 用户的唯一ID
+  email: string; // 用户的邮件地址
+  verified_email: boolean; // 邮件地址是否已验证
+  name: string; // 用户的全名
+  given_name: string; // 用户的名
+  family_name: string; // 用户的姓
+  picture: string; // 用户头像的URL
+  locale: string; // 用户的语言设置
+}
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly passwordService: PasswordService,
     private readonly configService: ConfigService
   ) {}
 
-  async createUser(payload: SignupInput): Promise<Token> {
-    const hashedPassword = await this.passwordService.hashPassword(
-      payload.password
-    );
-
+  async createUser(payload: SignupInput): Promise<User> {
     try {
       const user = await this.prisma.user.create({
         data: {
           ...payload,
-          password: hashedPassword,
           role: 'USER',
         },
       });
 
-      return this.generateTokens({
-        userId: user.id,
-      });
+      return user;
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -51,34 +51,72 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<Token> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      throw new NotFoundException(`No user found for email: ${email}`);
-    }
-
-    const passwordValid = await this.passwordService.validatePassword(
-      password,
-      user.password
-    );
-
-    if (!passwordValid) {
-      throw new BadRequestException('Invalid password');
-    }
-
-    return this.generateTokens({
-      userId: user.id,
+  validateUserGoogle(googleProfileId: string): Promise<User> {
+    return this.prisma.user.findFirst({
+      where: { googleId: googleProfileId },
     });
   }
 
-  validateUser(userId: string): Promise<User> {
-    return this.prisma.user.findUnique({ where: { id: userId } });
+  async googleLogin(code: string): Promise<Auth> {
+    const clientId = this.configService.get('GOOGLE_CLIENT_ID');
+    const clientSecret = this.configService.get('GOOGLE_CLIENT_SECRET');
+    const redirectUri = this.configService.get('GOOGLE_CALLBACK_URL');
+
+    try {
+      const response = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        {
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      const accessToken = response.data.access_token;
+      const profileRes = await axios.get<GoogleUserInfoResponse>(
+        'https://www.googleapis.com/oauth2/v1/userinfo',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const profile = profileRes.data;
+      const user = await this.validateUserGoogle(profile.id);
+
+      if (!user) {
+        const createUser = await this.createUser({
+          email: profile.email,
+          firstname: profile.given_name,
+          avatar: profile.picture,
+          lastname: profile.family_name,
+          googleId: profile.id,
+        });
+        const token = this.generateTokens({ userId: createUser.id });
+        return { user: createUser, ...token };
+      }
+
+      const token = this.generateTokens({ userId: user.id });
+      return { user: user, ...token };
+    } catch (error) {
+      throw new UnauthorizedException(error.message);
+    }
+  }
+
+  validateUserUserId(id: string): Promise<User> {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   getUserFromToken(token: string): Promise<User> {
     const id = this.jwtService.decode(token)['userId'];
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.validateUserUserId(id);
   }
 
   generateTokens(payload: { userId: string }): Token {
