@@ -9,6 +9,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import config from 'src/common/configs/config';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GqlConfigService } from './gql-config.service';
+import { HabitsModule } from './habits/habits.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { GqlConfigService } from './gql-config.service';
       useClass: GqlConfigService,
     }),
     AuthModule,
+    HabitsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

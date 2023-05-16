@@ -21,7 +21,7 @@ export class AuthController {
 
   @Post('/google')
   @ApiResponse({ type: Auth })
-  async googleLogin(@Query('code') code: string) {
+  async googleLogin(@Query('code') code: string): Promise<Auth> {
     return this.auth.googleLogin(code);
   }
   @UseGuards(JwtGuard)
