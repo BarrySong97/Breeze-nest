@@ -11,6 +11,7 @@ services:
       - postgres
     env_file:
       - .env
+    command: npm run migrate deploy
 
   postgres:
     image: postgres:13
