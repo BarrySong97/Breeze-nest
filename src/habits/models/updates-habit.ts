@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateHabit {
+  @ApiProperty()
+  id: string;
   @ApiProperty()
   @IsString()
   name: string;
@@ -11,7 +13,8 @@ export class UpdateHabit {
   @IsNumber()
   order: number;
 
-  @Type(() => Date) // 使用 @Type 装饰器将字段转换为 Date 类型
+  // @Type(() => Date) // 使用 @Type 装饰器将字段转换为 Date 类型
   @IsDate()
-  checkDate: Date;
+  @IsOptional()
+  checkDate?: Date;
 }

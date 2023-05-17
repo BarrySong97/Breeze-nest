@@ -26,13 +26,14 @@ model User {
 }
 
 model Habit {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String       @id @default(cuid())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   order     Int
-  name      String   @unique
-  user      User?    @relation(fields: [userId], references: [id])
+  name      String       @unique
+  user      User?        @relation(fields: [userId], references: [id])
   userId    String?
+  dates     HabitDates[] // 定义关联
 }
 
 model HabitDates {
@@ -40,6 +41,8 @@ model HabitDates {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   date      DateTime
+  habitId   String // 定义关联
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade) // 定义关联
 }
 
 enum Role {

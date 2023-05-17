@@ -20,9 +20,10 @@ Table Habit {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   order Int [not null]
-  name String [not null]
+  name String [unique, not null]
   user User
   userId String
+  dates HabitDates [not null]
 }
 
 Table HabitDates {
@@ -30,6 +31,8 @@ Table HabitDates {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   date DateTime [not null]
+  habitId String [not null]
+  habit Habit [not null]
 }
 
 Enum Role {
@@ -38,3 +41,5 @@ Enum Role {
 }
 
 Ref: Habit.userId > User.id
+
+Ref: HabitDates.habitId > Habit.id [delete: Cascade]
