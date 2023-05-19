@@ -4,6 +4,8 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { PrismaClientExceptionFilter, PrismaService } from 'nestjs-prisma';
 import { AppModule } from './app.module';
+import * as dotenvExpand from 'dotenv-expand';
+import { config, DotenvConfigOutput } from 'dotenv';
 import type {
   CorsConfig,
   NestConfig,
@@ -23,7 +25,6 @@ async function bootstrap() {
   // Prisma Client Exception Filter for unhandled exceptions
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
-
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
   const corsConfig = configService.get<CorsConfig>('cors');
@@ -48,4 +49,16 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT || nestConfig.port || 3000);
 }
+let env: DotenvConfigOutput = {};
+if (process.env.NODE_ENV === 'development') {
+  env = config({
+    path: '.env.development',
+  });
+} else if (process.env.NODE_ENV === 'production') {
+  env = config({
+    path: '.env.production',
+  });
+}
+dotenvExpand.expand(env);
+
 bootstrap();

@@ -1,4 +1,3 @@
-import { GraphQLModule } from '@nestjs/graphql';
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
@@ -7,8 +6,6 @@ import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
 import { AuthModule } from 'src/auth/auth.module';
 import config from 'src/common/configs/config';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { GqlConfigService } from './gql-config.service';
 import { HabitsModule } from './habits/habits.module';
 
 @Module({
@@ -25,10 +22,6 @@ import { HabitsModule } from './habits/habits.module';
           }),
         ],
       },
-    }),
-    GraphQLModule.forRootAsync<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      useClass: GqlConfigService,
     }),
     AuthModule,
     HabitsModule,
