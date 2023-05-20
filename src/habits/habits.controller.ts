@@ -7,11 +7,10 @@ import {
   Post,
   Put,
   UploadedFile,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import * as fs from 'fs';
+import * as csv from 'fast-csv';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorators/current-user';
@@ -70,7 +69,6 @@ export class HabitsController {
   }
 
   @Post('/json')
-  @ApiResponse({ type: HabitDTO, isArray: true })
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: fileMimetypeFilter('json'),
@@ -92,12 +90,10 @@ export class HabitsController {
   async importJson(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: UserDTO
-  ): Promise<HabitDTO[]> {
+  ) {
     const jsonData = file.buffer.toString('utf-8');
     const obj = JSON.parse(jsonData) as HabitDTO[];
-    return this.habitService.createMany(obj, user) as any as Promise<
-      HabitDTO[]
-    >;
+    this.habitService.createMany(obj, user);
   }
   @Post('/file/csv')
   @ApiResponse({ type: HabitDTO, isArray: true })
@@ -119,7 +115,67 @@ export class HabitsController {
       },
     },
   })
-  async importCSV(@Body() data: UpdateHabitDate) {
+  async importCSV(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: UserDTO
+  ) {
     // return this.habitService.check(data) as any as Promise<HabitDTO[]>;
+    const habits = await new Promise<HabitDTO[]>((resolve, reject) => {
+      const habits: HabitDTO[] = [];
+      csv
+        .parseString(file.buffer.toString('utf-8'), {
+          headers: true,
+        })
+        .on(
+          'data',
+          async (data: { name: string; order: string; date: string }) => {
+            const habitName = data.name;
+            const habitOrder = Number(data.order);
+            const habitDate = data.date;
+
+            // 查找是否已存在具有相同名称的习惯
+            const existingHabit = habits.find(
+              (habit) => habit.name === habitName
+            );
+            if (existingHabit) {
+              // 如果已存在，则将日期添加到现有习惯的日期数组中
+              existingHabit.dates.push({
+                date: new Date(habitDate),
+                id: '',
+                habitId: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+            } else {
+              // 如果不存在，则创建一个新的习惯对象
+              const newHabit: HabitDTO = {
+                id: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                name: habitName,
+                order: habitOrder,
+                dates: [
+                  {
+                    date: new Date(habitDate),
+                    id: '',
+                    habitId: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                ],
+              };
+
+              habits.push(newHabit);
+            }
+          }
+        )
+        .on('end', async () => {
+          resolve(habits);
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+    this.habitService.createMany(habits, user);
   }
 }
