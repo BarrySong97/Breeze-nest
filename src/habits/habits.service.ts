@@ -14,7 +14,7 @@ export class HabitsService {
   }
   async createMany(data: HabitDTO[], user: UserDTO) {
     try {
-       await this.prisma.$transaction(async (transaction) => {
+      await this.prisma.$transaction(async (transaction) => {
         // 创建主要的数据
         for (const habit of data) {
           const createdHabit = await transaction.habit.create({
@@ -28,7 +28,8 @@ export class HabitsService {
           const createdDates = habit.dates.map((date) => {
             return {
               habitId: createdHabit.id,
-              date: date.date,
+              // for local version data
+              date: date.date ?? (date as any as Date),
             };
           });
 
