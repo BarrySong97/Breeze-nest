@@ -93,7 +93,7 @@ export class HabitsController {
   ) {
     const jsonData = file.buffer.toString('utf-8');
     const obj = JSON.parse(jsonData) as HabitDTO[];
-    this.habitService.createMany(obj, user);
+    return this.habitService.createMany(obj, user);
   }
   @Post('/file/csv')
   @ApiResponse({ type: HabitDTO, isArray: true })
@@ -176,6 +176,6 @@ export class HabitsController {
           reject(error);
         });
     });
-    this.habitService.createMany(habits, user);
+    return this.habitService.createMany(habits, user);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Habit } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { UserDTO } from 'src/auth/dto/user.dto';
@@ -14,7 +14,7 @@ export class HabitsService {
   }
   async createMany(data: HabitDTO[], user: UserDTO) {
     try {
-      await this.prisma.$transaction(async (transaction) => {
+       await this.prisma.$transaction(async (transaction) => {
         // 创建主要的数据
         for (const habit of data) {
           const createdHabit = await transaction.habit.create({
@@ -36,10 +36,9 @@ export class HabitsService {
             data: createdDates,
           });
         }
-        // 创建关联的数据
       });
     } catch (error) {
-      throw new Error(error);
+      throw new BadRequestException('import Error');
     }
   }
   async findAll(): Promise<HabitDTO[]> {
