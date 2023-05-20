@@ -12,6 +12,36 @@ export class HabitsService {
   async create(data: CreateHabit, user: UserDTO) {
     return this.prisma.habit.create({ data: { ...data, userId: user.id } });
   }
+  async createMany(data: HabitDTO[], user: UserDTO) {
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        // 创建主要的数据
+        for (const habit of data) {
+          const createdHabit = await transaction.habit.create({
+            data: {
+              name: habit.name,
+              order: habit.order,
+              userId: user.id,
+            },
+          });
+
+          const createdDates = habit.dates.map((date) => {
+            return {
+              habitId: createdHabit.id,
+              date: date.date,
+            };
+          });
+
+          await transaction.habitDates.createMany({
+            data: createdDates,
+          });
+        }
+        // 创建关联的数据
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
   async findAll(): Promise<HabitDTO[]> {
     return this.prisma.habit.findMany({
       include: {
