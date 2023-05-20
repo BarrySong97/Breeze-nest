@@ -36,6 +36,18 @@ export class AuthService {
         data: {
           ...payload,
           role: 'USER',
+          habits: {
+            create: [
+              {
+                name: 'Drink Water',
+                order: 0,
+              },
+              {
+                name: 'Read',
+                order: 1,
+              },
+            ],
+          },
         },
       });
 

@@ -21,7 +21,7 @@ model User {
   googleId  String?
   firstname String?
   avatar    String?
-  posts     Habit[]
+  habits    Habit[]
   role      Role
 }
 
@@ -31,7 +31,7 @@ model Habit {
   updatedAt DateTime     @updatedAt
   order     Int
   name      String       @unique
-  user      User?        @relation(fields: [userId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String?
   dates     HabitDates[] // 定义关联
 }

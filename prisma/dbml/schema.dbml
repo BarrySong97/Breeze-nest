@@ -11,7 +11,7 @@ Table User {
   googleId String
   firstname String
   avatar String
-  posts Habit [not null]
+  habits Habit [not null]
   role Role [not null]
 }
 
@@ -40,6 +40,6 @@ Enum Role {
   USER
 }
 
-Ref: Habit.userId > User.id
+Ref: Habit.userId > User.id [delete: Cascade]
 
 Ref: HabitDates.habitId > Habit.id [delete: Cascade]

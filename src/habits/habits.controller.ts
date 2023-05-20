@@ -32,7 +32,7 @@ export class HabitsController {
   @Get('')
   @ApiResponse({ type: HabitDTO, isArray: true })
   async findAll(): Promise<HabitDTO[]> {
-    return this.habitService.findAll() as any as Promise<HabitDTO[]>;
+    return this.habitService.findAll();
   }
 
   @Post('')
