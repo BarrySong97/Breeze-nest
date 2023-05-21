@@ -6,17 +6,23 @@ import { PrismaClientExceptionFilter, PrismaService } from 'nestjs-prisma';
 import { AppModule } from './app.module';
 import * as dotenvExpand from 'dotenv-expand';
 import { config, DotenvConfigOutput } from 'dotenv';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import type {
   CorsConfig,
   NestConfig,
   SwaggerConfig,
 } from 'src/common/configs/config.interface';
+import { HttpExceptionFilter } from './common/filter/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  app.useLogger(app.get(Logger));
   // Validation
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // enable shutdown hook
   const prismaService: PrismaService = app.get(PrismaService);

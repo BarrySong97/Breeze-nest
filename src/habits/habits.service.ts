@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Habit } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
+import { AuthService } from 'src/auth/auth.service';
 import { UserDTO } from 'src/auth/dto/user.dto';
 import { HabitDTO } from './dtos/habit.dto';
 import { CreateHabit } from './models/create-habit';
@@ -8,6 +9,7 @@ import { UpdateHabitDate } from './models/update-habit-date';
 import { UpdateHabit } from './models/updates-habit';
 @Injectable()
 export class HabitsService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(private readonly prisma: PrismaService) {}
   async create(data: CreateHabit, user: UserDTO) {
     return this.prisma.habit.create({ data: { ...data, userId: user.id } });
@@ -39,6 +41,7 @@ export class HabitsService {
         }
       });
     } catch (error) {
+      this.logger.error(`import habit data error: ${error.message}`);
       throw new BadRequestException('import Error');
     }
   }

@@ -5,6 +5,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -24,6 +25,7 @@ interface GoogleUserInfoResponse {
 }
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
@@ -53,11 +55,12 @@ export class AuthService {
 
       return user;
     } catch (e) {
+      this.logger.error(`create user error`);
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002'
       ) {
-        throw new ConflictException(`Email ${payload.email} already used.`);
+        throw new ConflictException(`create user error`);
       }
       throw new Error(e);
     }
@@ -118,6 +121,7 @@ export class AuthService {
       const token = this.generateTokens({ userId: user.id });
       return { user: user, ...token };
     } catch (error) {
+      this.logger.error(`google login error: ${error.message}`);
       throw new UnauthorizedException(error.message);
     }
   }
