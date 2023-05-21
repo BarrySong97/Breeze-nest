@@ -22,6 +22,8 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/logs ./logs
 
+VOLUME ["/app/logs"]
 EXPOSE 3000
 CMD ["/bin/sh", "-c", "npm run migrate:deploy && npm run start:prod"]

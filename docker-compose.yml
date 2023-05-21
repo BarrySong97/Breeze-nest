@@ -11,6 +11,8 @@ services:
       - postgres
     env_file:
       - .env.production
+    volumes:
+      - ~/breeze-nest/logs:/app/logs
 
   postgres:
     image: postgres:13
